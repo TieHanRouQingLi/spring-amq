@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <bean id="consummerJmsFactory" class="org.apache.activemq.pool.PooledConnectionFactory"
+          destroy-method="stop">
+        <property name="connectionFactory">
+            <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+                <property name="brokerURL">
+                    <value>tcp://172.16.10.178:61616</value>
+                </property>
+            </bean>
+        </property>
+        <property name="maxConnections" value="100"></property>
+    </bean>
+
+    <!--使用缓存可以提升效率-->
+    <bean id="consummerCachingConnectionFactory"
+          class="org.springframework.jms.connection.CachingConnectionFactory">
+        <property name="targetConnectionFactory" ref="consummerJmsFactory"/>
+        <property name="sessionCacheSize" value="100"/>
+    </bean>
+
+    <bean id="destinationQeuue" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg index="0" value="my-flight-queue"/>
+    </bean>
+
+    <bean id="comsummerJmsContainer"
+          class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="consummerCachingConnectionFactory"/>
+        <property name="destination" ref="destinationQeuue"/>
+        <property name="messageListener" ref="messageListener"/>
+    </bean>
+
+    <!--消息监听器-->
+    <bean id="messageListener" class="com.ias.consummer.FlightServiceConsummer"/>
+
+</beans>
